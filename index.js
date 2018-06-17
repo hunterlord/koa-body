@@ -40,7 +40,8 @@ function requestbody(opts) {
   opts.urlencoded = 'urlencoded' in opts ? opts.urlencoded : true;
   opts.json = 'json' in opts ? opts.json : true;
   opts.text = 'text' in opts ? opts.text : true;
-  opts.xml = true;
+  opts.xml = 'xml' in opts ? opts.text : true;
+  opts.xmlMatches = 'xmlMatches' in opts ? opts.xmlMatches : [];
   opts.encoding = 'encoding' in opts ? opts.encoding : 'utf-8';
   opts.jsonLimit = 'jsonLimit' in opts ? opts.jsonLimit : '1mb';
   opts.jsonStrict = 'jsonStrict' in opts ? opts.jsonStrict : true;
@@ -58,7 +59,20 @@ function requestbody(opts) {
       ['GET', 'HEAD', 'DELETE'].indexOf(ctx.method.toUpperCase()) === -1
     ) {
       try {
-        if (opts.json && ctx.is('json')) {
+        var xmlMatched = opts.xmlMatches.some(x => {
+          return x === ctx.url;
+        });
+
+        if (xmlMatched || (opts.xml && (ctx.is('xml') || ctx.is('text/xml')))) {
+          bodyPromise = new Promise((resolve, reject) => {
+            getRawBody(ctx.req).then(buf => {
+              parseString(buf, (err, result) => {
+                if (err) reject(err);
+                resolve(result);
+              });
+            });
+          });
+        } else if (opts.json && ctx.is('json')) {
           bodyPromise = buddy.json(ctx, {
             encoding: opts.encoding,
             limit: opts.jsonLimit,
@@ -77,16 +91,6 @@ function requestbody(opts) {
           });
         } else if (opts.multipart && ctx.is('multipart')) {
           bodyPromise = formy(ctx, opts.formidable);
-        } else if (opts.xml && (ctx.is('xml') || ctx.is('text/xml'))) {
-          bodyPromise = new Promise((resolve, reject) => {
-            getRawBody(ctx.req).then(buf => {
-              console.log(`request xml body: ${buf}`);
-              parseString(buf, (err, result) => {
-                if (err) reject(err);
-                resolve(result);
-              });
-            });
-          });
         }
       } catch (parsingError) {
         if (typeof opts.onError === 'function') {

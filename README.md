@@ -1,3 +1,11 @@
+## support xml
+
+> add option xmlMatches
+
+```javascript
+xmlMatches: ['/api/suckme']
+```
+
 koa-body [![Build Status](https://travis-ci.org/dlau/koa-body.svg?branch=koa2)](https://travis-ci.org/dlau/koa-body) [![Dependencies Status](https://david-dm.org/dlau/koa-body/status.svg)](https://david-dm.org/dlau/koa-body)
 ================
 
